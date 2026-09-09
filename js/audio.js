@@ -1,8 +1,12 @@
-// Warm ambient pad generated with Web Audio: slow chord progression,
-// gentle sine voices, soft lowpass filter with LFO, and subtle music-box chimes.
+// 背景音乐：
+// 1) 若在 config.js 里设置了 music.src（如 "assets/bgm.mp3"），就用这个音频文件播放，
+//    并按阶段做音量变化（星空轻 → 插蜡烛稍响 → 吹气时压低 → 烟花最响 → 尾声收小）。
+// 2) 若没有设置，或文件加载/播放失败，自动回退到内置的 Web Audio 合成氛围音乐。
+// 两种模式都会保留音效（插蜡烛的八音盒声、烟花的低沉爆响）。
+
+import { birthdayConfig } from "./config.js";
 
 const CHORD_PROGRESSION = [
-  // [frequency Hz, detune cents] per voice (3-4 voices per chord)
   // vi - Am
   [[220.00, -4], [261.63, 3], [329.63, -2], [493.88, 5]],
   // IV - Fmaj7
@@ -12,13 +16,20 @@ const CHORD_PROGRESSION = [
   // V - G6
   [[196.00, 3], [246.94, -4], [293.66, 2], [440.00, -3]]
 ];
-
-const CHORD_DURATION = 11; // seconds per chord
+const CHORD_DURATION = 11; // 秒/和弦
 
 export class AudioManager {
   constructor() {
     this.ctx = null;
-    this.master = null;
+    this.started = false;
+
+    // 文件模式
+    this.el = null;
+    this.useFile = false;
+    this.volRaf = 0;
+
+    // 合成模式
+    this.synthGain = null;
     this.padGain = null;
     this.filter = null;
     this.lfo = null;
@@ -26,44 +37,134 @@ export class AudioManager {
     this.voices = [];
     this.chordTimer = null;
     this.chordIndex = 0;
-    this.started = false;
-    this.muted = false;
-    this.moodGains = {
-      intro: { vol: 0 },
-      stars: { vol: 0.18 },
-      cat: { vol: 0.24 },
-      candle: { vol: 0.30 },
-      blow: { vol: 0.14 },
-      firework: { vol: 0.22 },
-      ending: { vol: 0.20 }
+
+    // 音效
+    this.sfx = null;
+
+    this.synthMoods = {
+      intro: 0,
+      stars: 0.18,
+      cat: 0.24,
+      candle: 0.30,
+      blow: 0.14,
+      firework: 0.22,
+      ending: 0.20
     };
+  }
+
+  get music() {
+    return birthdayConfig.music || {};
   }
 
   async start() {
     if (this.started) return;
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
-    this.ctx = new AudioCtx();
-    if (this.ctx.state === "suspended") {
-      await this.ctx.resume();
+
+    // 先在用户手势内把 <audio> 建好并调用 play()，移动端才不会被拦
+    const src = this.music.src;
+    let el = null;
+    let playPromise = null;
+    if (src) {
+      el = this.createEl(src);
+      try { playPromise = el.play(); } catch (e) { playPromise = Promise.reject(e); }
     }
 
-    this.master = this.ctx.createGain();
-    this.master.gain.value = 0;
-    this.master.connect(this.ctx.destination);
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      this.ctx = new AudioCtx();
+      if (this.ctx.state === "suspended") await this.ctx.resume();
+      this.sfx = this.ctx.createGain();
+      this.sfx.gain.value = 0.9;
+      this.sfx.connect(this.ctx.destination);
+    }
 
-    // Lowpass filter with slow LFO for movement
+    // 优先使用用户自己的音乐文件
+    if (el && this.ctx) {
+      const ok = await this.awaitReady(el, 8000);
+      try { await playPromise; } catch (e) {}
+      if (ok) {
+        this.el = el;
+        this.useFile = true;
+        this.started = true;
+        this.fadeTo("stars", this.music.fadeIn ?? 4);
+        return;
+      }
+      console.warn("[audio] 音乐文件不可用，改用内置合成音乐");
+      try { el.pause(); } catch (e) {}
+    }
+
+    await this.startSynth();
+    this.started = true;
+    this.fadeTo("stars", 2.0);
+  }
+
+  // ---------- 文件模式 ----------
+
+  createEl(src) {
+    const el = new Audio();
+    if (/^https?:\/\//i.test(src)) el.crossOrigin = "anonymous";
+    el.src = src;
+    el.loop = this.music.loop !== false;
+    el.preload = "auto";
+    el.volume = 0;
+    return el;
+  }
+
+  // 等待音频可读；超时或出错返回 false
+  awaitReady(el, timeoutMs) {
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (ok) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        el.removeEventListener("canplay", onReady);
+        el.removeEventListener("playing", onReady);
+        el.removeEventListener("error", onFail);
+        resolve(ok);
+      };
+      const onReady = () => finish(true);
+      const onFail = () => finish(false);
+      const timer = setTimeout(() => finish(false), timeoutMs);
+      el.addEventListener("canplay", onReady);
+      el.addEventListener("playing", onReady);
+      el.addEventListener("error", onFail);
+    });
+  }
+
+  rampElementVolume(target, seconds) {
+    const el = this.el;
+    if (!el) return;
+    const from = el.volume;
+    const dur = Math.max(0.1, seconds) * 1000;
+    const t0 = performance.now();
+    cancelAnimationFrame(this.volRaf);
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / dur);
+      el.volume = Math.max(0, Math.min(1, from + (target - from) * p));
+      if (p < 1) this.volRaf = requestAnimationFrame(step);
+    };
+    this.volRaf = requestAnimationFrame(step);
+  }
+
+  // ---------- 合成模式 ----------
+
+  async startSynth() {
+    if (!this.ctx) return;
+
+    this.synthGain = this.ctx.createGain();
+    this.synthGain.gain.value = 0;
+    this.synthGain.connect(this.ctx.destination);
+
     this.filter = this.ctx.createBiquadFilter();
     this.filter.type = "lowpass";
     this.filter.frequency.value = 600;
     this.filter.Q.value = 0.6;
-    this.filter.connect(this.master);
+    this.filter.connect(this.synthGain);
 
     this.padGain = this.ctx.createGain();
     this.padGain.gain.value = 0.55;
     this.padGain.connect(this.filter);
 
-    // LFO modulates filter cutoff between 350 and 1100 Hz
     this.lfo = this.ctx.createOscillator();
     this.lfo.frequency.value = 0.08;
     this.lfoGain = this.ctx.createGain();
@@ -72,18 +173,15 @@ export class AudioManager {
     this.lfoGain.connect(this.filter.frequency);
     this.lfo.start();
 
-    // Start the first chord
     this.playChord(this.chordIndex);
     this.chordTimer = setInterval(() => {
       this.chordIndex = (this.chordIndex + 1) % CHORD_PROGRESSION.length;
       this.crossfadeToChord(this.chordIndex);
     }, CHORD_DURATION * 1000);
-
-    this.fadeTo("stars", 2.0);
-    this.started = true;
   }
 
   playChord(index) {
+    if (!this.ctx || !this.padGain) return;
     const chord = CHORD_PROGRESSION[index];
     const t = this.ctx.currentTime;
     this.voices = [];
@@ -94,7 +192,7 @@ export class AudioManager {
       osc.detune.value = detune;
       const g = this.ctx.createGain();
       g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.18 - i * 0.03, t + 3.5); // slow swell
+      g.gain.linearRampToValueAtTime(0.18 - i * 0.03, t + 3.5);
       osc.connect(g);
       g.connect(this.padGain);
       osc.start(t);
@@ -105,7 +203,6 @@ export class AudioManager {
   crossfadeToChord(index) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    // Fade out current voices
     const old = this.voices;
     old.forEach(({ osc, gain }) => {
       gain.gain.cancelScheduledValues(t);
@@ -113,63 +210,59 @@ export class AudioManager {
       gain.gain.linearRampToValueAtTime(0, t + 2.0);
       try { osc.stop(t + 2.2); } catch (e) {}
     });
-    // Start new chord after brief crossfade
     setTimeout(() => this.playChord(index), 1800);
   }
 
+  // ---------- 统一接口 ----------
+
   fadeTo(mood, duration = 1.5) {
-    if (!this.ctx || !this.started) return;
+    if (!this.started) return;
+    if (this.useFile) {
+      const phases = this.music.phases || {};
+      const scale = phases[mood] ?? 1;
+      this.rampElementVolume((this.music.volume ?? 0.6) * scale, duration);
+      return;
+    }
+    if (!this.ctx || !this.synthGain) return;
     const t = this.ctx.currentTime;
-    const target = (this.moodGains[mood] || this.moodGains.stars).vol;
-    this.master.gain.setTargetAtTime(target, t, duration * 0.4);
+    const target = this.synthMoods[mood] ?? this.synthMoods.stars;
+    this.synthGain.gain.setTargetAtTime(target, t, duration * 0.4);
   }
 
   setMood(mood) {
     this.fadeTo(mood);
   }
 
-  // Soft music-box chime: random chord-tone, gentle sine with quick decay
+  // 八音盒式轻响（插蜡烛时）
   chime() {
-    if (!this.ctx || !this.started) return;
+    if (!this.ctx || !this.sfx) return;
     const chord = CHORD_PROGRESSION[this.chordIndex];
     const [freq] = chord[Math.floor(Math.random() * chord.length)];
     const t = this.ctx.currentTime;
 
-    const osc = this.ctx.createOscillator();
-    osc.type = "sine";
-    osc.frequency.value = freq * 2; // octave up for sparkle
-
-    // Add a subtle second harmonic
-    const osc2 = this.ctx.createOscillator();
-    osc2.type = "sine";
-    osc2.frequency.value = freq * 3;
-
-    const g = this.ctx.createGain();
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.08, t + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 1.6);
-
-    const g2 = this.ctx.createGain();
-    g2.gain.setValueAtTime(0, t);
-    g2.gain.linearRampToValueAtTime(0.03, t + 0.02);
-    g2.gain.exponentialRampToValueAtTime(0.001, t + 1.0);
-
-    osc.connect(g);
-    osc2.connect(g2);
-    g.connect(this.filter);
-    g2.connect(this.filter);
-    osc.start(t);
-    osc2.start(t);
-    osc.stop(t + 1.7);
-    osc2.stop(t + 1.1);
+    const mk = (f, peak, dur, dest) => {
+      const osc = this.ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = f;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(peak, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      osc.connect(g);
+      g.connect(dest);
+      osc.start(t);
+      osc.stop(t + dur + 0.1);
+    };
+    mk(freq * 2, 0.08, 1.6, this.sfx);
+    mk(freq * 3, 0.03, 1.0, this.sfx);
   }
 
-  // Soft low boom for fireworks (less harsh than before)
+  // 烟花低沉爆响
   boom() {
-    if (!this.ctx || !this.started) return;
+    if (!this.ctx || !this.sfx) return;
     const t = this.ctx.currentTime;
 
-    const bufferSize = this.ctx.sampleRate * 1.2;
+    const bufferSize = Math.floor(this.ctx.sampleRate * 1.2);
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
@@ -178,7 +271,7 @@ export class AudioManager {
     const noise = this.ctx.createBufferSource();
     noise.buffer = buffer;
     const noiseGain = this.ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.10, t);
+    noiseGain.gain.setValueAtTime(0.1, t);
     noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
     const noiseFilter = this.ctx.createBiquadFilter();
     noiseFilter.type = "bandpass";
@@ -186,35 +279,42 @@ export class AudioManager {
     noiseFilter.Q.value = 0.8;
     noise.connect(noiseFilter);
     noiseFilter.connect(noiseGain);
-    noiseGain.connect(this.master);
+    noiseGain.connect(this.sfx);
     noise.start(t);
     noise.stop(t + 1.1);
 
-    // Soft sine sub
     const osc = this.ctx.createOscillator();
     osc.type = "sine";
     osc.frequency.setValueAtTime(160, t);
     osc.frequency.exponentialRampToValueAtTime(40, t + 0.5);
     const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.10, t);
+    gain.gain.setValueAtTime(0.1, t);
     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
     osc.connect(gain);
-    gain.connect(this.master);
+    gain.connect(this.sfx);
     osc.start(t);
     osc.stop(t + 0.8);
   }
 
   stop() {
-    if (!this.ctx) return;
-    try {
-      const t = this.ctx.currentTime;
-      this.master.gain.setTargetAtTime(0, t, 0.6);
-      if (this.chordTimer) clearInterval(this.chordTimer);
-      setTimeout(() => {
-        try { this.lfo && this.lfo.stop(); } catch (e) {}
-        this.voices.forEach((v) => { try { v.osc.stop(); } catch (e) {} });
-        this.ctx.close();
-      }, 900);
-    } catch (e) {}
+    cancelAnimationFrame(this.volRaf);
+    if (this.el) {
+      this.rampElementVolume(0, 2.5);
+      setTimeout(() => { try { this.el.pause(); } catch (e) {} }, 2600);
+    }
+    if (this.ctx) {
+      try {
+        if (this.synthGain) {
+          this.synthGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.6);
+        }
+        if (this.chordTimer) clearInterval(this.chordTimer);
+        setTimeout(() => {
+          try { this.lfo && this.lfo.stop(); } catch (e) {}
+          this.voices.forEach((v) => { try { v.osc.stop(); } catch (e) {} });
+          this.ctx.close();
+        }, 900);
+      } catch (e) {}
+    }
+    this.started = false;
   }
 }

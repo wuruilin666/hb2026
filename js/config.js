@@ -13,6 +13,26 @@ export const birthdayConfig = {
   ],
   birthdayLine: "生日快乐。",
   blowDialog: ["好了，现在轮到你了。", "请对着屏幕吹一口气吧。"],
+
+  // 背景音乐：把你自己的音乐文件放进 assets/，然后填到 src 里即可。
+  // 例如 src: "assets/bgm.mp3"
+  // 留空 "" 则使用内置合成音乐。文件加载失败会自动回退到合成音乐，不会中断剧情。
+  music: {
+    src: "",
+    volume: 0.6, // 整体音量 0~1
+    loop: true, // 播完是否循环（曲子比剧情短就开 true）
+    fadeIn: 4, // 开场淡入秒数
+    // 各阶段音量倍率（0~1），相对于上面的 volume
+    phases: {
+      stars: 0.75,
+      cat: 0.85,
+      candle: 1,
+      blow: 0.4,
+      firework: 1,
+      ending: 0.7
+    }
+  },
+
   ending: [
     "陪伴欧巴的第七年",
     "只是希望以后的人生都是坦途。",

@@ -100,7 +100,8 @@ async function run() {
     intro.style.opacity = "0";
     setTimeout(() => intro.remove(), 700);
 
-    await audio.start();
+    // 不阻塞剧情：音乐在后台加载，失败会自动回退，不影响后续动画
+    audio.start().catch(() => {});
 
     // STARS
     const stars = new Stars(document.getElementById("stars"));
