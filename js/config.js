@@ -53,11 +53,23 @@ export const birthdayConfig = {
     cakeForwardDuration: 3500,
     blowFallbackMs: 5200,
     blowExtinguishDelay: 350,
+
+    // 烟花 3 段式：quiet(开) → build(渐盛) → finale(20)
     fireworksQuietDelay: 700,
-    fireworksDuration: 18000,
-    number20HoldDuration: 5500,
-    endingLineDelay: 2800,
-    finalFadeDuration: 2500
+    fireworksDuration: 22000,        // 整体时长
+    fireworksBuildFraction: 0.30,    // build 阶段起点
+    fireworksFinaleFraction: 0.70,  // finale 阶段起点
+    number20HoldDuration: 5000,      // "20" 静止停留
+    number20TwinkleDuration: 2500,   // "20" 缓慢闪烁
+    number20DriftDuration: 3500,    // 20 → 星空 散开
+    postFireworksQuiet: 2400,        // 20 消散后安静时长
+
+    // 结尾节奏
+    endingLineDelays: [2500, 2500, 3500, 3500, 5000], // 每条文字停留
+    endingFadeOut: 1200,            // 单条文字淡出
+    endingBetweenGap: 800,           // 两条文字之间额外停顿
+    finalPreFadeQuiet: 2800,         // 文字全部结束后、整体淡出前的安静
+    finalFadeDuration: 3200          // 整体变暗
   }
 };
 

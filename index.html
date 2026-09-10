@@ -31,13 +31,27 @@
 
       <div class="layer layer-ground" id="ground-layer" data-page-node-id="abAMYwLXxKWl4OfbpA7FRz">
         <div class="ground-hill" data-page-node-id="10sfQpWXRLr7jxDuXmfqAn"></div>
+        
+      </div>
+    </div>
+
+    <div id="cat-scene" class="cat-scene">
         <div id="cat-wrap" class="cat-wrap" data-page-node-id="Y8MLqVwW9aZGv2XO0wp19E">
           <svg id="cat" class="cat" viewBox="0 0 420 560" xmlns="http://www.w3.org/2000/svg" data-page-node-id="BeUcOMnw1DnGlnKB5w3CCE">
             <defs data-page-node-id="hDgNRJGAEyJusWhWqogkGW">
-              <radialGradient id="eyeGrad" cx="50%" cy="50%" r="50%" data-page-node-id="nfmRj7IZgdiU0QyyZjED4U">
-                <stop offset="0%" stop-color="#c5e08d" data-page-node-id="JSBTb9ilvg1FteLxlkBqJ4" />
-                <stop offset="75%" stop-color="#6e8f3e" data-page-node-id="49ci7ICeyW6EWN27S4QAE7" />
+              <radialGradient id="eyeGrad" cx="50%" cy="50%" r="55%" data-page-node-id="nfmRj7IZgdiU0QyyZjED4U">
+                <stop offset="0%" stop-color="#d8e89a" data-page-node-id="JSBTb9ilvg1FteLxlkBqJ4" />
+                <stop offset="60%" stop-color="#8aa64a" data-page-node-id="49ci7ICeyW6EWN27S4QAE7" />
                 <stop offset="100%" stop-color="#3d5a20" data-page-node-id="wD7udbS6ESKXLfKHEcVpHL" />
+              </radialGradient>
+              <radialGradient id="noseGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#f7b2b2" />
+                <stop offset="100%" stop-color="#e08888" />
+              </radialGradient>
+              <radialGradient id="bellGrad" cx="40%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#f5f5f5" />
+                <stop offset="60%" stop-color="#bcbcbc" />
+                <stop offset="100%" stop-color="#777" />
               </radialGradient>
               <filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%" data-page-node-id="xmXintlDlyCSrUrtfIOFHt">
                 <feGaussianBlur in="SourceAlpha" stdDeviation="4" data-page-node-id="kG0IDWVafqfw5hQUXsj1iD" />
@@ -52,83 +66,122 @@
               </filter>
             </defs>
 
-            <!-- Tail -->
-            <g id="cat-tail" transform="translate(320,360)" data-page-node-id="f8NBPiYNCaOCzoR4jTsqBu">
-              <path d="M10,0 Q70,-40 90,-110 Q100,-160 70,-190 Q50,-210 20,-200 Q-10,-185 -5,-150 Q10,-100 -30,-60 Q-50,-30 -20,10 Z" fill="#1a1a1a" data-page-node-id="5COTd9FRkTxXKEiYpsxzjn" />
-              <path d="M35,-50 Q55,-80 50,-120" stroke="#f4f4f4" stroke-width="18" stroke-linecap="round" fill="none" data-page-node-id="x4YTVh1X1na1V6IlYUw6WF" />
-              <path d="M45,-140 Q55,-165 40,-185" stroke="#f4f4f4" stroke-width="14" stroke-linecap="round" fill="none" data-page-node-id="ksByX7xLITz9WVA0kNntEX" />
+            <!-- Tail (rendered behind body) -->
+            <g id="cat-tail" transform="translate(320,355)" data-page-node-id="f8NBPiYNCaOCzoR4jTsqBu">
+              <!-- Tail body: all black, curves up and over -->
+              <path d="M0,0 C 30,-30 60,-70 70,-115 C 78,-160 55,-195 20,-200 C -15,-200 -30,-175 -22,-145 C -10,-110 5,-85 0,-55 C -3,-30 -10,-15 0,0 Z" fill="#1a1a1a" />
+              <!-- White band around middle of tail -->
+              <path d="M48,-80 C 60,-72 60,-58 50,-52 C 36,-50 26,-60 30,-78 C 36,-86 44,-86 48,-80 Z" fill="#f8f7f2" />
+              <!-- A small black ring inside the band break (for natural feel) -->
+              <path d="M22,-78 C 28,-76 30,-72 27,-69 C 22,-68 18,-72 19,-76 C 20,-78 21,-78 22,-78 Z" fill="#1a1a1a" opacity="0.4" />
             </g>
 
             <!-- Body -->
             <g id="cat-body" transform="translate(210,360)" data-page-node-id="YWEO8BJMvTaWcY3VacPD7G">
               <ellipse cx="0" cy="0" rx="105" ry="130" fill="#f8f7f2" filter="url(#softShadow)" data-page-node-id="DMcDG6zcERhpHaRJjsO1Ac" />
-              <ellipse cx="-45" cy="-70" rx="28" ry="38" fill="#1a1a1a" transform="rotate(-15)" data-page-node-id="LyfwPKYPUolfoHGTjKQmX7" />
-              <ellipse cx="55" cy="20" rx="22" ry="30" fill="#1a1a1a" transform="rotate(10)" data-page-node-id="XNRKfihVTizKUGq1My8BzP" />
-              <ellipse cx="-35" cy="60" rx="18" ry="24" fill="#1a1a1a" transform="rotate(-8)" data-page-node-id="w1q0JcQdS99VnTnCkeDDKA" />
+              <!-- Small irregular black patch on viewer's left (cat's right) shoulder/chest -->
+              <path d="M-72,-95 C -50,-115 -22,-112 -8,-90 C -2,-72 -18,-58 -45,-58 C -72,-60 -82,-78 -72,-95 Z" fill="#1a1a1a" />
+              <!-- Large irregular black patch on viewer's right (cat's left) hip/buttock, extending down toward thigh -->
+              <path d="M22,-32 C 58,-50 92,-35 96,5 C 96,42 78,78 48,92 C 22,98 4,80 0,52 C -4,22 4,-8 22,-32 Z" fill="#1a1a1a" />
+              <!-- Tiny black spot on lower-left belly (subtle) -->
+              <ellipse cx="-30" cy="98" rx="10" ry="6" fill="#1a1a1a" opacity="0.95" />
             </g>
 
-            <!-- Legs -->
-            <g id="cat-legs" transform="translate(210,490)" data-page-node-id="aQ2wbbYMrJfGL6X2YZqBmA">
-              <ellipse cx="-55" cy="0" rx="32" ry="26" fill="#f8f7f2" data-page-node-id="fZ2xj1P2Ea93Kt2cjWGsR3" />
-              <ellipse cx="55" cy="0" rx="32" ry="26" fill="#f8f7f2" data-page-node-id="iluPA6gDuLIqR9oxUTb8H8" />
-              <ellipse cx="-55" cy="8" rx="20" ry="10" fill="#e8e7e2" data-page-node-id="uZVGUBYzl37OBWoIMzsAGa" />
-              <ellipse cx="55" cy="8" rx="20" ry="10" fill="#e8e7e2" data-page-node-id="kv9keDPMN8T0tlyEkYGRCS" />
+            <!-- Legs / feet -->
+            <g id="cat-legs" transform="translate(210,488)" data-page-node-id="aQ2wbbYMrJfGL6X2YZqBmA">
+              <ellipse cx="-58" cy="0" rx="34" ry="26" fill="#f8f7f2" stroke="#e8e7e2" stroke-width="1" data-page-node-id="fZ2xj1P2Ea93Kt2cjWGsR3" />
+              <ellipse cx="58" cy="0" rx="34" ry="26" fill="#f8f7f2" stroke="#e8e7e2" stroke-width="1" data-page-node-id="iluPA6gDuLIqR9oxUTb8H8" />
+              <ellipse cx="-58" cy="9" rx="22" ry="10" fill="#f3c4c4" opacity="0.55" data-page-node-id="uZVGUBYzl37OBWoIMzsAGa" />
+              <ellipse cx="58" cy="9" rx="22" ry="10" fill="#f3c4c4" opacity="0.55" data-page-node-id="kv9keDPMN8T0tlyEkYGRCS" />
             </g>
 
             <!-- Collar -->
-            <g id="cat-collar" transform="translate(210,245)" data-page-node-id="22QEFIyWlFWMNzIfiRBKqm">
-              <path d="M-75,10 Q0,35 75,10 Q75,28 0,50 Q-75,28 -75,10" fill="#c0392b" data-page-node-id="d03tiShUziYTj4hKkdq66C" />
-              <circle cx="0" cy="38" r="14" fill="#d0d0d0" stroke="#999" stroke-width="2" data-page-node-id="tui0BtYHxeAGCKfjsshGCP" />
-              <circle cx="0" cy="38" r="5" fill="#777" data-page-node-id="fsem7JBMnIVXblD77SM0N2" />
+            <g id="cat-collar" transform="translate(210,240)" data-page-node-id="22QEFIyWlFWMNzIfiRBKqm">
+              <path d="M-78,8 Q0,32 78,8 Q78,28 0,52 Q-78,28 -78,8 Z" fill="#c0392b" data-page-node-id="d03tiShUziYTj4hKkdq66C" />
+              <path d="M-78,8 Q0,32 78,8" fill="none" stroke="#8a1f15" stroke-width="1.5" opacity="0.6" data-page-node-id="collarShadow" />
+              <circle cx="0" cy="38" r="15" fill="url(#bellGrad)" stroke="#666" stroke-width="1.5" data-page-node-id="tui0BtYHxeAGCKfjsshGCP" />
+              <circle cx="0" cy="38" r="5" fill="#5a5a5a" data-page-node-id="fsem7JBMnIVXblD77SM0N2" />
+              <line x1="0" y1="33" x2="0" y2="44" stroke="#4a4a4a" stroke-width="1" opacity="0.7" />
             </g>
 
             <!-- Head group -->
-            <g id="cat-head" transform="translate(210,155)" data-page-node-id="58b0uuszTcAOrQZipQ9aIF">
-              <!-- Ears -->
-              <path d="M-90,-70 L-130,-170 L-40,-115 Z" fill="#1a1a1a" data-page-node-id="Wopadpxq6M0uuiFu58ZO4t" />
-              <path d="M-105,-90 L-120,-145 L-60,-115 Z" fill="#e8b4b4" data-page-node-id="fpRVeaSN2wjBj8dK1ufGLd" />
-              <path d="M90,-70 L130,-170 L40,-115 Z" fill="#1a1a1a" data-page-node-id="2GHXgjts2EME9bv68sxb7P" />
-              <path d="M105,-90 L120,-145 L60,-115 Z" fill="#e8b4b4" data-page-node-id="3u2zwrHY3dyNVejUEElWDJ" />
-
-              <!-- Head base -->
-              <ellipse cx="0" cy="0" rx="115" ry="100" fill="#f8f7f2" data-page-node-id="pYbfaPC0wOVeINswcDTihL" />
-              <!-- Black cap (asymmetric: left flows down, right compact) -->
-              <path d="M-115,-20 Q-122,-118 -50,-115 Q-28,-110 -20,-88 Q-16,-58 -38,-38 Q-68,-22 -98,-18 Q-112,-12 -115,-20 Z" fill="#1a1a1a" data-page-node-id="D9O66uFyNw4zwNNGOOwqyK" />
-              <path d="M115,-20 Q122,-102 68,-108 Q52,-96 58,-74 Q78,-52 100,-32 Q112,-22 115,-20 Z" fill="#1a1a1a" data-page-node-id="bs2R3tQfXk8mWnYpA5zKvL" />
-
-              <!-- Left eye patch (large, blends into cap) -->
-              <path d="M-100,-8 Q-70,-42 -30,-18 Q-22,22 -62,38 Q-110,30 -100,-8 Z" fill="#1a1a1a" opacity="0.96" data-page-node-id="DmaGGX1rh2Hth8p1T4ezCI" />
-              <!-- Right eye patch (smaller, isolated) -->
-              <path d="M88,-12 Q62,-34 38,-14 Q42,18 72,26 Q98,22 88,-12 Z" fill="#1a1a1a" opacity="0.92" data-page-node-id="CS31TdJKDHGPdLvzq44z6e" />
-
-              <!-- Eyes -->
-              <g id="eyes" data-page-node-id="yu5MRwpWjfGFVRNlKrdgDg">
-                <circle cx="-45" cy="-2" r="26" fill="url(#eyeGrad)" data-page-node-id="UWCAyv0rkGYDV2JejFRmWj" />
-                <circle cx="-45" cy="-2" r="14" fill="#111" data-page-node-id="HEKDuwyb6iIKIovQbMWLHn" />
-                <circle cx="-39" cy="-9" r="6" fill="#fff" opacity="0.9" data-page-node-id="stdqwtLfACaYkjrRJ8EYMv" />
-                <circle cx="45" cy="-2" r="26" fill="url(#eyeGrad)" data-page-node-id="mN70IqpVJl3u9HOHN7nBme" />
-                <circle cx="45" cy="-2" r="14" fill="#111" data-page-node-id="QYHdiwOzNpUHBYfpiF5sBG" />
-                <circle cx="51" cy="-9" r="6" fill="#fff" opacity="0.9" data-page-node-id="UFwoHtQ4vq62gvTLCpilET" />
+            <g id="cat-head" transform="translate(210,158)" data-page-node-id="58b0uuszTcAOrQZipQ9aIF">
+              <!-- Ears (black outside, pink inside, white fur tufts at base) -->
+              <g id="ear-left">
+                <path d="M-100,-58 L-138,-178 L-40,-110 Z" fill="#1a1a1a" />
+                <path d="M-110,-78 L-122,-150 L-58,-108 Z" fill="#f4b6a0" />
+                <ellipse cx="-80" cy="-100" rx="14" ry="6" fill="#1a1a1a" />
+                <!-- White fur tuft at base of left ear -->
+                <path d="M-105,-60 C -100,-45 -90,-40 -78,-50 C -86,-58 -98,-62 -105,-60 Z" fill="#f8f7f2" />
+              </g>
+              <g id="ear-right">
+                <path d="M100,-58 L138,-178 L40,-110 Z" fill="#1a1a1a" />
+                <path d="M110,-78 L122,-150 L58,-108 Z" fill="#f4b6a0" />
+                <ellipse cx="80" cy="-100" rx="14" ry="6" fill="#1a1a1a" />
+                <path d="M105,-60 C 100,-45 90,-40 78,-50 C 86,-58 98,-62 105,-60 Z" fill="#f8f7f2" />
               </g>
 
-              <!-- Nose & mouth -->
-              <ellipse cx="0" cy="32" rx="10" ry="7" fill="#f4a4a4" data-page-node-id="DASK2hDBieVtdRUReF63K8" />
-              <path d="M-10,42 Q0,55 10,42" stroke="#d0d0d0" stroke-width="3" fill="none" stroke-linecap="round" data-page-node-id="j0WDtDtPGpoi9Ttb3QMW1G" />
-              <path d="M0,39 L0,50" stroke="#d0d0d0" stroke-width="3" stroke-linecap="round" data-page-node-id="IiOJyT2Yiuw3wV6lgMXAV7" />
+              <!-- Head base: white round face -->
+              <ellipse cx="0" cy="0" rx="118" ry="102" fill="#f8f7f2" data-page-node-id="pYbfaPC0wOVeINswcDTihL" />
 
-              <!-- Whiskers -->
-              <g stroke="#dcdcdc" stroke-width="2" stroke-linecap="round" opacity="0.8" data-page-node-id="Hqlo2T2yUjCz9oqOWx5Hhj">
-                <line x1="-20" y1="38" x2="-95" y2="28" data-page-node-id="Qh9nBnATtH3g7N7WqDSsxz" />
-                <line x1="-20" y1="44" x2="-100" y2="48" data-page-node-id="V6OCbFFX5TrGmDyNOxCZdz" />
-                <line x1="-20" y1="50" x2="-92" y2="66" data-page-node-id="AWA9dGPBgUy1ZwnuUaYJ4m" />
-                <line x1="20" y1="38" x2="95" y2="28" data-page-node-id="1ocryZpT4D7dIF3oEmeeqj" />
-                <line x1="20" y1="44" x2="100" y2="48" data-page-node-id="lTYt7uomm5MAQ0nKdhTHIV" />
-                <line x1="20" y1="50" x2="92" y2="66" data-page-node-id="BzMH9wgTPuVlPb0YvUDWMX" />
+              <!-- Black cap (asymmetric, matches reference: top + extends down on viewer's left side further) -->
+              <!-- Left cap: large, sweeps from far left across to near center, deep at the eye area -->
+              <path d="M-118,-12
+                       C -125,-80 -110,-118 -55,-122
+                       C -30,-122 -18,-110 -18,-90
+                       C -18,-72 -36,-62 -60,-55
+                       C -90,-48 -110,-40 -116,-30
+                       C -120,-22 -120,-16 -118,-12 Z" fill="#1a1a1a" />
+              <!-- Right cap: smaller, more compact -->
+              <path d="M118,-12
+                       C 124,-78 110,-110 72,-110
+                       C 56,-106 52,-90 58,-72
+                       C 76,-58 100,-42 110,-32
+                       C 116,-24 119,-18 118,-12 Z" fill="#1a1a1a" />
+
+              <!-- Left eye patch (viewer's left = cat's right): LARGE, flows from cap down past eye to the cheek -->
+              <path d="M-108,-2
+                       C -98,-30 -78,-50 -42,-32
+                       C -22,-18 -20,12 -32,32
+                       C -58,50 -100,42 -110,22
+                       C -116,8 -114,2 -108,-2 Z" fill="#1a1a1a" opacity="0.97" />
+              <!-- Right eye patch (viewer's right = cat's left): smaller, more isolated teardrop around the eye -->
+              <path d="M88,-6
+                       C 76,-28 52,-34 30,-18
+                       C 22,2 36,22 60,26
+                       C 86,26 100,16 96,2
+                       C 95,-2 92,-4 88,-6 Z" fill="#1a1a1a" opacity="0.95" />
+
+              <!-- Eyes: large, with big black pupils (reference) -->
+              <g id="eyes" data-page-node-id="yu5MRwpWjfGFVRNlKrdgDg">
+                <!-- Left eye -->
+                <circle cx="-48" cy="-2" r="26" fill="url(#eyeGrad)" data-page-node-id="UWCAyv0rkGYDV2JejFRmWj" />
+                <circle cx="-48" cy="-2" r="17" fill="#0a0a0a" data-page-node-id="HEKDuwyb6iIKIovQbMWLHn" />
+                <circle cx="-42" cy="-10" r="6" fill="#fff" opacity="0.95" data-page-node-id="stdqwtLfACaYkjrRJ8EYMv" />
+                <circle cx="-52" cy="4" r="2.5" fill="#fff" opacity="0.7" />
+                <!-- Right eye -->
+                <circle cx="48" cy="-2" r="26" fill="url(#eyeGrad)" data-page-node-id="mN70IqpVJl3u9HOHN7nBme" />
+                <circle cx="48" cy="-2" r="17" fill="#0a0a0a" data-page-node-id="QYHdiwOzNpUHBYfpiF5sBG" />
+                <circle cx="54" cy="-10" r="6" fill="#fff" opacity="0.95" data-page-node-id="UFwoHtQ4vq62gvTLCpilET" />
+                <circle cx="44" cy="4" r="2.5" fill="#fff" opacity="0.7" />
+              </g>
+
+              <!-- Nose & mouth (small, subtle) -->
+              <ellipse cx="0" cy="32" rx="9" ry="6" fill="url(#noseGrad)" data-page-node-id="DASK2hDBieVtdRUReF63K8" />
+              <path d="M0,38 L0,48" stroke="#a8a8a8" stroke-width="2.2" stroke-linecap="round" data-page-node-id="IiOJyT2Yiuw3wV6lgMXAV7" />
+              <path d="M-9,46 Q0,55 9,46" stroke="#a8a8a8" stroke-width="2.2" fill="none" stroke-linecap="round" data-page-node-id="j0WDtDtPGpoi9Ttb3QMW1G" />
+
+              <!-- Whiskers (sparse, thin) -->
+              <g stroke="#dadada" stroke-width="1.4" stroke-linecap="round" opacity="0.7" data-page-node-id="Hqlo2T2yUjCz9oqOWx5Hhj">
+                <line x1="-20" y1="38" x2="-92" y2="32" data-page-node-id="Qh9nBnATtH3g7N7WqDSsxz" />
+                <line x1="-20" y1="44" x2="-98" y2="52" data-page-node-id="V6OCbFFX5TrGmDyNOxCZdz" />
+                <line x1="20" y1="38" x2="92" y2="32" data-page-node-id="1ocryZpT4D7dIF3oEmeeqj" />
+                <line x1="20" y1="44" x2="98" y2="52" data-page-node-id="lTYt7uomm5MAQ0nKdhTHIV" />
               </g>
 
               <!-- Cheek blush -->
-              <ellipse cx="-80" cy="35" rx="14" ry="9" fill="#f4a4a4" opacity="0.22" data-page-node-id="sLWKRmoG9OA2D6Dqms869j" />
-              <ellipse cx="80" cy="35" rx="14" ry="9" fill="#f4a4a4" opacity="0.22" data-page-node-id="CZPNDOYCyIyCDWA3YAwL5k" />
+              <ellipse cx="-78" cy="38" rx="14" ry="9" fill="#f4a4a4" opacity="0.20" data-page-node-id="sLWKRmoG9OA2D6Dqms869j" />
+              <ellipse cx="78" cy="38" rx="14" ry="9" fill="#f4a4a4" opacity="0.20" data-page-node-id="CZPNDOYCyIyCDWA3YAwL5k" />
             </g>
 
             <!-- Left arm -->
@@ -218,7 +271,6 @@
           </svg>
         </div>
       </div>
-    </div>
 
     <!-- UI overlays -->
     <div id="intro" class="overlay intro" data-page-node-id="ms5LwPBxwJiuA05CY5cVOQ">

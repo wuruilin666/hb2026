@@ -227,23 +227,40 @@ html, body {
 #world { z-index: 1; }
 #intro, #wish-text, #photo-card, #dialog-card, #ending, #mic-hint, #fireworks { z-index: 20; }
 
+.cat-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.cat-scene.show {
+  opacity: 1;
+}
+
 .cat-wrap, .cake-wrap {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
   transform-origin: center bottom;
   will-change: transform, opacity;
+  /* iPhone safe-area 保底，避免被 Home Indicator 遮挡 */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .cat-wrap {
-  width: min(60vw, 320px);
-  bottom: 20vh;
+  width: clamp(170px, 42vw, 320px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 10vh);
+  max-height: 70vh;
   z-index: 2;
 }
 
 .cake-wrap {
-  width: min(44vw, 240px);
-  bottom: 24vh;
+  width: clamp(150px, 34vw, 240px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 15vh);
+  max-height: 55vh;
   z-index: 3;
 }
 
@@ -417,8 +434,11 @@ html, body {
 }
 
 @keyframes cakeForward {
-  0% { transform: translateX(-50%) scale(1) translateY(0); }
-  100% { transform: translateX(-50%) scale(2.2) translateY(22vh); }
+  /* Order matters: scale must come LAST so the translateY is NOT multiplied by it.
+     We also want the cake to grow toward the upper-center of the viewport
+     (the dialog card occupies the lower portion). */
+  0%   { transform: translateX(-50%) translateY(0)                                 scale(1); }
+  100% { transform: translateX(-50%) translateY(calc(-1 * var(--cake-forward-up, 28vh))) scale(var(--cake-final-scale, 1.8)); }
 }
 
 /* Overlays */
@@ -656,13 +676,31 @@ html, body {
 }
 
 @media (max-width: 480px) {
-  .cat-wrap { width: 66vw; bottom: 6vh; }
-  .cake-wrap { width: 50vw; bottom: 10vh; }
+  .cat-wrap {
+    width: 62vw;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 6vh);
+  }
+  .cake-wrap {
+    width: 48vw;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 10vh);
+  }
   .dialog-content { font-size: 15px; }
   .wish-text { top: 14%; }
 }
 
+/* Shorter phones: shrink further to keep the whole cat visible */
+@media (max-width: 380px) and (max-height: 700px) {
+  .cat-wrap {
+    width: 70vw;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 4vh);
+  }
+  .cake-wrap {
+    width: 52vw;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 8vh);
+  }
+}
+
 @media (max-height: 500px) {
-  .cat-wrap { width: 42vh; }
-  .cake-wrap { width: 30vh; bottom: 8vh; }
+  .cat-wrap { width: 42vh; bottom: calc(env(safe-area-inset-bottom, 0px) + 4vh); }
+  .cake-wrap { width: 30vh; bottom: calc(env(safe-area-inset-bottom, 0px) + 8vh); }
 }

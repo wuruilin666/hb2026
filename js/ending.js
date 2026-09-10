@@ -9,7 +9,9 @@ export class Ending {
 
   async play() {
     const lines = birthdayConfig.ending;
-    const delay = birthdayConfig.timing.endingLineDelay;
+    const delays = birthdayConfig.timing.endingLineDelays;
+    const fadeOut = birthdayConfig.timing.endingFadeOut;
+    const betweenGap = birthdayConfig.timing.endingBetweenGap;
 
     for (let i = 0; i < lines.length; i++) {
       const el = document.createElement("div");
@@ -19,13 +21,17 @@ export class Ending {
       // force reflow
       void el.offsetWidth;
       el.classList.add("show");
-      await wait(delay + lines[i].length * 45);
+      // 停留时间：根据该行文字长度微调，最后一句更久
+      const baseHold = delays[i] ?? 3000;
+      const lengthBonus = Math.min(1500, (lines[i] || "").length * 50);
+      await wait(baseHold + lengthBonus);
       el.classList.remove("show");
-      await wait(700);
+      await wait(fadeOut + (i < lines.length - 1 ? betweenGap : 0));
       el.remove();
     }
 
-    await wait(400);
+    // 文字全部结束后的明显情绪缓冲
+    await wait(birthdayConfig.timing.finalPreFadeQuiet);
     this.viewport.classList.add("final-dim");
     await wait(birthdayConfig.timing.finalFadeDuration);
   }
