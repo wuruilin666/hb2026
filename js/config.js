@@ -59,15 +59,16 @@ export const birthdayConfig = {
     cakeDismissDropVh: 6,            // 退去时向下漂移的幅度（vh）
     postCakeDarkness: 300,           // 蛋糕消失后、烟花前的短暂黑暗停顿
 
-    // 烟花 3 段式：quiet(开) → build(渐盛) → finale(20)
+    // 烟花：build(起) → peak(最盛) → forming(聚成 20) → hold → drift
     fireworksQuietDelay: 700,
-    fireworksDuration: 22000,        // 整体时长
-    fireworksBuildFraction: 0.30,    // build 阶段起点
-    fireworksFinaleFraction: 0.70,  // finale 阶段起点
-    number20HoldDuration: 5000,      // "20" 静止停留
-    number20TwinkleDuration: 2500,   // "20" 缓慢闪烁
-    number20DriftDuration: 3500,    // 20 → 星空 散开
-    postFireworksQuiet: 2400,        // 20 消散后安静时长
+    fireworksDuration: 22000,           // 前三个阶段的基准时长
+    fireworksBuildFraction: 0.30,       // 由缓入密的转折点
+    fireworksFormFraction: 0.68,        // 开始准备 20：烟花数量明显减少
+    fireworksGatherFraction: 0.78,      // 明显朝数字聚集，之后不再放新烟花
+    fireworksFormEndFraction: 0.88,     // 目标点全部生成，"20" 完整
+    number20HoldDuration: 5000,          // "20" 完整保持（4~5 秒）
+    number20DriftDuration: 3500,        // "20" → 星光的散开时长
+    postFireworksQuiet: 2400,           // 散完之后的安静星空
 
     // 结尾节奏（三条：陪伴 / 坦途 / 生日快乐，徐瑞繁。最后一句是核心大字，停留最久）
     endingLineDelays: [2500, 3000, 6000], // 每条文字停留

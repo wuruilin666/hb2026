@@ -283,8 +283,9 @@ html, body {
 }
 
 @keyframes tailWag {
-  0%, 100% { transform: translate(320px, 360px) rotate(-4deg); }
-  50% { transform: translate(320px, 360px) rotate(6deg); }
+  /* 尾巴抬在身体右后方，尾尖大约到下巴的高度（参考图里尾巴不会顶到头旁边） */
+  0%, 100% { transform: translate(330px, 452px) rotate(-4deg); }
+  50% { transform: translate(330px, 452px) rotate(6deg); }
 }
 
 .cake {

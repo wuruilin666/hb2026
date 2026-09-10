@@ -60,50 +60,8 @@ async function run() {
   const canvas = document.getElementById("fireworks");
   const catScene = document.getElementById("cat-scene");
 
-  // Replace dialog avatar with a small head-only cat so it always renders
-  const avatar = document.querySelector(".dialog-avatar");
-  if (avatar) {
-    avatar.innerHTML = `
-      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="avEye" cx="50%" cy="50%" r="55%">
-            <stop offset="0%" stop-color="#d8e89a" />
-            <stop offset="60%" stop-color="#8aa64a" />
-            <stop offset="100%" stop-color="#3d5a20" />
-          </radialGradient>
-        </defs>
-        <!-- ears -->
-        <path d="M30,55 L12,5 L78,40 Z" fill="#1a1a1a" />
-        <path d="M170,55 L188,5 L122,40 Z" fill="#1a1a1a" />
-        <path d="M40,42 L30,18 L65,42 Z" fill="#f4b6a0" />
-        <path d="M160,42 L170,18 L135,42 Z" fill="#f4b6a0" />
-        <!-- white fur tufts -->
-        <path d="M40,52 C 46,62 58,64 70,55 C 60,50 50,50 40,52 Z" fill="#f8f7f2" />
-        <path d="M160,52 C 154,62 142,64 130,55 C 140,50 150,50 160,52 Z" fill="#f8f7f2" />
-        <!-- head -->
-        <ellipse cx="100" cy="110" rx="82" ry="72" fill="#f8f7f2" />
-        <!-- asymmetric cap -->
-        <path d="M18,82 C 12,38 50,22 100,22 C 110,22 118,30 118,46 C 118,60 108,68 90,72 C 60,76 30,80 22,86 C 18,86 18,84 18,82 Z" fill="#1a1a1a" />
-        <path d="M182,82 C 188,42 150,28 110,30 C 100,30 95,40 95,50 C 95,60 102,68 118,72 C 145,76 168,80 178,86 C 182,86 182,84 182,82 Z" fill="#1a1a1a" />
-        <!-- left eye patch (large) -->
-        <path d="M25,100 C 38,80 65,72 90,86 C 100,98 96,118 78,128 C 50,132 22,122 22,108 C 22,104 23,102 25,100 Z" fill="#1a1a1a" opacity="0.97" />
-        <!-- right eye patch (small) -->
-        <path d="M150,98 C 135,86 115,90 108,104 C 106,118 122,128 140,124 C 160,120 168,108 164,100 C 162,98 155,98 150,98 Z" fill="#1a1a1a" opacity="0.95" />
-        <!-- eyes -->
-        <circle cx="55" cy="106" r="18" fill="url(#avEye)" />
-        <circle cx="55" cy="106" r="11" fill="#0a0a0a" />
-        <circle cx="60" cy="100" r="4" fill="#fff" />
-        <circle cx="145" cy="106" r="18" fill="url(#avEye)" />
-        <circle cx="145" cy="106" r="11" fill="#0a0a0a" />
-        <circle cx="150" cy="100" r="4" fill="#fff" />
-        <!-- nose, mouth, collar, bell -->
-        <ellipse cx="100" cy="135" rx="6" ry="4" fill="#f4a4a4" />
-        <path d="M95,142 Q100,148 105,142" stroke="#aaa" stroke-width="1.6" fill="none" stroke-linecap="round" />
-        <path d="M70,150 Q100,170 130,150 Q100,178 70,150 Z" fill="#c0392b" />
-        <circle cx="100" cy="165" r="6" fill="#cfcfcf" stroke="#888" stroke-width="0.8" />
-      </svg>
-    `;
-  }
+  // 对白框里的猫咪头像复用 #cat 本体（index.html 里用 <use> + 头部视框裁好），
+  // 这样全站永远只有同一个角色，改猫不用改两处。
 
   photos.init();
 
