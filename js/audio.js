@@ -65,7 +65,11 @@ export class AudioManager {
     let playPromise = null;
     if (src) {
       el = this.createEl(src);
-      try { playPromise = el.play(); } catch (e) { playPromise = Promise.reject(e); }
+      try { playPromise = el.play(); } catch (e) { playPromise = Promise.resolve(false); }
+      // 先挂一个空的 catch：若浏览器拦截自动播放，也不会产生未处理的 Promise 报错
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {});
+      }
     }
 
     const AudioCtx = window.AudioContext || window.webkitAudioContext;

@@ -33,12 +33,11 @@ export const birthdayConfig = {
     }
   },
 
+  // 结尾三句。最后一句是整个网页的核心文字，会以大字呈现并停留更久。
   ending: [
     "陪伴欧巴的第七年",
     "只是希望以后的人生都是坦途。",
-    "生日快乐，徐瑞繁。",
-    "进入二十岁，不需要一夜之间变得成熟。",
-    "接纳现在的自己和处境，\n我会永远支持你。"
+    "生日快乐，徐瑞繁。"
   ],
   timing: {
     starAppearBase: 520,
@@ -54,6 +53,12 @@ export const birthdayConfig = {
     blowFallbackMs: 5200,
     blowExtinguishDelay: 350,
 
+    // 吹灭蜡烛后：蛋糕离场节奏（熄灭 → 停留 → 淡出退去 → 短暂黑暗 → 烟花）
+    cakeDismissDelay: 700,           // 蜡烛熄灭后，蛋糕原地短暂停留
+    cakeDismissDuration: 1000,       // 蛋糕淡出 / 向后下方退去的时长
+    cakeDismissDropVh: 6,            // 退去时向下漂移的幅度（vh）
+    postCakeDarkness: 300,           // 蛋糕消失后、烟花前的短暂黑暗停顿
+
     // 烟花 3 段式：quiet(开) → build(渐盛) → finale(20)
     fireworksQuietDelay: 700,
     fireworksDuration: 22000,        // 整体时长
@@ -64,11 +69,12 @@ export const birthdayConfig = {
     number20DriftDuration: 3500,    // 20 → 星空 散开
     postFireworksQuiet: 2400,        // 20 消散后安静时长
 
-    // 结尾节奏
-    endingLineDelays: [2500, 2500, 3500, 3500, 5000], // 每条文字停留
+    // 结尾节奏（三条：陪伴 / 坦途 / 生日快乐，徐瑞繁。最后一句是核心大字，停留最久）
+    endingLineDelays: [2500, 3000, 6000], // 每条文字停留
     endingFadeOut: 1200,            // 单条文字淡出
+    endingLastFadeOut: 2600,         // 最后一句核心文字要淡得更慢
     endingBetweenGap: 800,           // 两条文字之间额外停顿
-    finalPreFadeQuiet: 2800,         // 文字全部结束后、整体淡出前的安静
+    finalPreFadeQuiet: 3200,         // 文字全部结束后、整体淡出前的安静星空
     finalFadeDuration: 3200          // 整体变暗
   }
 };

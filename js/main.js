@@ -107,6 +107,12 @@ async function run() {
 
   photos.init();
 
+  // 蛋糕离场动画会用到的两个变量：给一个安全默认值，
+  // 这样即使流程有变动，离场动画也不会从错误的位置开始。
+  cakeWrap.style.setProperty("--cake-forward-up", "0px");
+  cakeWrap.style.setProperty("--cake-final-scale", "1");
+  cakeWrap.style.setProperty("--cake-dismiss-drop", `${cfg.cakeDismissDropVh}vh`);
+
   // INTRO
   await wait(300);
 
@@ -175,8 +181,17 @@ async function run() {
 
     await wait(cfg.blowExtinguishDelay);
     candles.extinguishAll();
+
+    // 蜡烛熄灭 → 蛋糕短暂停留 → 自然淡出退去 → 短暂黑暗 → 烟花
+    // 注意：蛋糕的离场只发生在吹蜡烛之后，前面的捧蛋糕/插蜡烛/递近保持原状。
+    await wait(cfg.cakeDismissDelay);
+    cakeWrap.classList.add("cake-dismiss");
+    await wait(cfg.cakeDismissDuration);
+    // 结束后彻底从视觉层移除，避免悬浮在烟花或结尾文字之上
+    cakeWrap.classList.add("cake-gone");
+
     if (audio) audio.boom();
-    await wait(1200);
+    await wait(cfg.postCakeDarkness);
 
     // FIREWORKS
     const fireworks = new Fireworks(canvas);

@@ -441,6 +441,34 @@ html, body {
   100% { transform: translateX(-50%) translateY(calc(-1 * var(--cake-forward-up, 28vh))) scale(var(--cake-final-scale, 1.8)); }
 }
 
+/* Cake exit — only after the candles have been blown out.
+   The cake lingers ~0.7s, then fades while drifting back/down and shrinking a
+   little. It must never jump to display:none. */
+.cake-wrap.cake-dismiss {
+  animation: cakeDismiss 1s cubic-bezier(0.4, 0, 0.65, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes cakeDismiss {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(calc(-1 * var(--cake-forward-up, 0px))) scale(var(--cake-final-scale, 1));
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(calc(-1 * var(--cake-forward-up, 0px) + var(--cake-dismiss-drop, 6vh))) scale(calc(var(--cake-final-scale, 1) * 0.9));
+  }
+}
+
+/* After the exit animation finished: fully gone from the visual layer so it can
+   never float above the fireworks or the closing text. */
+.cake-wrap.cake-gone {
+  animation: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* Overlays */
 .overlay {
   position: fixed;
@@ -654,6 +682,12 @@ html, body {
 .ending-line.big {
   font-size: clamp(26px, 7vw, 48px);
   font-weight: 500;
+}
+
+/* 最后一句（整段结尾的核心文字）：出现与淡出都更慢更缓 */
+.ending-line.last {
+  transition: opacity 2.6s ease, transform 2.6s ease;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55), 0 0 42px rgba(255, 205, 130, 0.22);
 }
 
 .fireworks {
