@@ -170,32 +170,53 @@ if (document.readyState === "loading") {
   run();
 }
 
-// Compute a scale + vertical shift that brings the cake close but keeps it
-// (and the largest candle) fully inside the viewport, centered above the
-// dialog card that will appear at the bottom.
+// Compute a scale + vertical shift that puts the cake at the VISUAL CENTER of the
+// viewport. During the blow-candles stage the cake is the absolute focal point of
+// the composition, so its center should sit at ~50% viewport height. The dialog
+// card is only a UI overlay pinned to the very bottom — it no longer dictates where
+// the cake goes. We only keep two minimal safety constraints so the tallest candle
+// flame is never clipped at the top and the cake base never collides with the
+// bottom UI. No "reserve 36vh for the dialog" logic anymore.
 function computeCakeForwardScale() {
   const cake = document.getElementById("cake-wrap");
   if (!cake) return;
   const rect = cake.getBoundingClientRect();
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const safeBottom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--sai-bottom")) || 0;
 
-  // Scaled cake must fit in the area above the dialog card
+  // --- Target: cake visual center = viewport center ---
+  const centerFrac = 0.50;        // 蛋糕视觉中心对齐视口 50%
+  const candleTopSafety = 0.06;   // 最高蜡烛火焰距顶部至少保留 6vh
+  const bottomMargin = 0.08;      // 蛋糕底盘距底部至少 8vh（对白卡是叠加层，不决定构图）
+
+  // Geometry of the cake SVG (viewBox "-130 -70 260 160") expressed as fractions of
+  // its rendered height, so the margins stay correct at any scale.
+  //  - tallest candle flame reaches y≈-104, i.e. 0.2125*h above the viewBox top (-70)
+  //  - cake board bottom reaches y=100, i.e. 0.5625*h below the viewBox center (10)
+  const flameOverhang = 0.2125;
+  const boardBelowCenter = 0.5625;
+
   const margin = 16;
-  const dialogReserve = 0.36; // ~ 36vh reserved for the dialog card at the bottom
-  const topReserve = 0.08;     // leave 8vh headroom so the tallest candle flame isn't clipped
-  const usableH = vh * (1 - dialogReserve - topReserve);
-  const usableW = vw - margin * 2;
-  const sx = usableW / rect.width;
-  const sy = usableH / rect.height;
-  const scale = Math.max(1.2, Math.min(2.4, Math.min(sx, sy)));
+  // Width: fill the available width (16px gutters), never overflow sideways.
+  const sx = (vw - margin * 2) / rect.width;
+  // Height: center the cake, but cap its half-height so the top candle keeps
+  // candleTopSafety and the base keeps bottomMargin. The smaller of the two bands
+  // wins — that is the only thing allowed to shift the cake off dead-center.
+  const maxHalfFrac = Math.min(
+    centerFrac - candleTopSafety,          // 顶部：最高蜡烛完整
+    1 - centerFrac - bottomMargin          // 底部：蛋糕底盘不入对白卡
+  );
+  const sy = (vh * maxHalfFrac * 2) / rect.height;
+
+  let scale = Math.min(sx, sy);
+  scale = Math.max(1.2, Math.min(2.4, scale));
   cake.style.setProperty("--cake-final-scale", scale.toFixed(3));
 
-  // Vertical shift: place the scaled cake so its center is in the
-  // [topReserve .. 1 - dialogReserve] midband of the viewport.
-  const centerY = rect.top + rect.height / 2;
-  const targetCenterY = vh * (topReserve + (1 - dialogReserve - topReserve) * 0.5);
-  const upPx = targetCenterY - centerY; // negative if we need to go up
-  cake.style.setProperty("--cake-forward-up", `${-upPx}px`);
+  // Vertical shift. transform-origin is center-bottom, so after scaling about the
+  // bottom edge the cake's center lands at (rect.bottom - scaledH/2); we then move
+  // it up by `upPx` so the center hits exactly targetCenterY.
+  const scaledH = rect.height * scale;
+  const targetCenterY = vh * centerFrac;
+  const upPx = rect.bottom - scaledH / 2 - targetCenterY; // >0 means shift up
+  cake.style.setProperty("--cake-forward-up", `${upPx.toFixed(1)}px`);
 }

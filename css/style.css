@@ -436,8 +436,9 @@ html, body {
 
 @keyframes cakeForward {
   /* Order matters: scale must come LAST so the translateY is NOT multiplied by it.
-     We also want the cake to grow toward the upper-center of the viewport
-     (the dialog card occupies the lower portion). */
+     The cake grows from its resting spot and settles at the viewport's visual
+     center (--cake-forward-up / --cake-final-scale are computed in JS); the dialog
+     card is only a bottom overlay and does not decide this position. */
   0%   { transform: translateX(-50%) translateY(0)                                 scale(1); }
   100% { transform: translateX(-50%) translateY(calc(-1 * var(--cake-forward-up, 28vh))) scale(var(--cake-final-scale, 1.8)); }
 }
