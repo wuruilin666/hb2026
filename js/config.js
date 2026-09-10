@@ -18,7 +18,7 @@ export const birthdayConfig = {
   // 例如 src: "assets/bgm.mp3"
   // 留空 "" 则使用内置合成音乐。文件加载失败会自动回退到合成音乐，不会中断剧情。
   music: {
-    src: "",
+    src: "bgm.mp3",
     volume: 0.6, // 整体音量 0~1
     loop: true, // 播完是否循环（曲子比剧情短就开 true）
     fadeIn: 4, // 开场淡入秒数
