@@ -135,6 +135,34 @@ html, body {
   transform: scale(1.25);
 }
 
+/* 特殊星「首次亮起」时的短促闪耀：音乐时间到达、这颗星第一次出现时播一次。
+   亮度短暂提高 + 光晕（::after + box-shadow）扩大 + 轻微放大到 1.15，
+   约 420ms 内回到正常状态，之后仍按原本的 .visible / .twinkle 表现。
+   它只负责视觉表现，不参与时间同步（什么时候亮始终由 audio.currentTime 决定）；
+   也不影响点击反馈 .active（两者不共用 class）。 */
+.star.special-burst {
+  animation: specialBurst 420ms cubic-bezier(0.16, 1, 0.3, 1) 1;
+}
+
+@keyframes specialBurst {
+  /* 0→22%（约 92ms）：很快地「打亮」，所以看起来是"突然出现"而不是缓缓淡入 */
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+    filter: brightness(2.6) drop-shadow(0 0 12px rgba(255, 242, 205, 0.95));
+  }
+  22% {
+    opacity: 1;
+    transform: scale(1.15);
+    filter: brightness(2.05) drop-shadow(0 0 18px rgba(255, 236, 190, 0.9));
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
 @keyframes twinkle {
   0% { opacity: 0.55; }
   100% { opacity: 1; }
