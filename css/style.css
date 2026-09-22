@@ -591,6 +591,61 @@ html, body {
   cursor: pointer;
 }
 
+/* ---------- 开场音乐鼓点回忆蒙太奇（js/memory-montage.js） ----------
+   一层独立的纯视觉浮层：整屏柔和压暗 + 居中照片。
+   它和 .photo-card（五颗特殊星星的照片卡片）是两回事：
+   照片只做 opacity / scale 的淡入淡出，面板位置固定不动，也不会出现旧图闪回。 */
+.memory-montage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 12;
+  /* 纯视觉层：绝不能吃掉五颗特殊星星的点击 */
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse at center,
+    rgba(2, 2, 10, var(--montage-scrim, 0.62)) 0%,
+    rgba(2, 2, 10, var(--montage-scrim-mid, 0.3)) 48%,
+    rgba(2, 2, 10, 0) 78%);
+  transition: opacity var(--montage-end-fade, 620ms) ease;
+}
+
+.memory-montage.is-visible {
+  opacity: 1;
+}
+
+.memory-montage-panel {
+  width: min(78vw, 340px);
+  padding: 10px;
+  border-radius: 18px;
+  background: rgba(15, 20, 35, 0.62);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+}
+
+.memory-montage-img {
+  display: block;
+  width: 100%;
+  max-height: 60vh;
+  border-radius: 12px;
+  object-fit: contain;
+  opacity: 1;
+  transform: scale(1);
+  /* 随鼓点被「唤醒」：只做很轻的推进 + 淡入，不旋转、不大幅位移、不弹跳 */
+  transition: opacity var(--montage-fade, 380ms) cubic-bezier(0.22, 1, 0.36, 1),
+              transform var(--montage-fade, 380ms) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 换下一张照片时：只让照片内容淡出（面板本身保持原位、原大小）。
+   等新照片确认可以绘制之后才移除这个 class，
+   所以旧照片绝不会在新照片切换过程中重新抢回显示权。 */
+.memory-montage.is-switching .memory-montage-img {
+  opacity: 0;
+  transform: scale(var(--montage-scale-from, 0.94));
+}
+
 .dialog-card {
   position: fixed;
   left: 50%;
