@@ -12,6 +12,12 @@ import { Ending } from "./ending.js";
 
 const cfg = birthdayConfig.timing;
 
+// 音频启动的提示文案（非常轻量的一行字，不是弹窗）
+const AUDIO_PREPARING = "正在准备音乐…";
+const AUDIO_RETRY_HINT = "音乐没能启动，点一下屏幕再试一次";
+const AUDIO_GIVEUP_HINT = "音乐没能启动，画面会继续，只是没有背景音乐";
+const MAX_AUDIO_RETRIES = 3;
+
 // Build a fixed starry night-sky background that stays behind everything
 function buildBackgroundStars() {
   const container = document.getElementById("bg-stars");
@@ -80,6 +86,76 @@ async function run() {
   cakeWrap.style.setProperty("--cake-final-scale", "1");
   cakeWrap.style.setProperty("--cake-dismiss-drop", `${cfg.cakeDismissDropVh}vh`);
 
+  /* ------------------------------------------------------------------
+     音频启动状态提示
+     ------------------------------------------------------------------
+     一行很小的说明文字，位置就在开始按钮原来的位置下方。元素由这里创建
+     （index.html 不动），只在「启动慢到用户会察觉 / 启动失败」时出现；
+     音乐正常启动的情况下从头到尾都不会显示。
+     它绝不遮挡任何东西（pointer-events: none），也不是弹窗。
+  ------------------------------------------------------------------ */
+  let audioStatusEl = null;
+  let audioStatusTimer = 0;
+
+  function setAudioStatus(text, keepMs = 0) {
+    if (!audioStatusEl) {
+      audioStatusEl = document.createElement("div");
+      audioStatusEl.className = "audio-status";
+      audioStatusEl.setAttribute("role", "status");
+      audioStatusEl.setAttribute("aria-live", "polite");
+      viewport.appendChild(audioStatusEl);
+    }
+    clearTimeout(audioStatusTimer);
+    audioStatusTimer = 0;
+    audioStatusEl.textContent = text || "";
+    audioStatusEl.classList.toggle("show", !!text);
+    if (text && keepMs > 0) {
+      // 提示自己会淡出：避免一行错误文字一直挂在画面上直到结尾
+      audioStatusTimer = setTimeout(() => {
+        audioStatusEl.textContent = "";
+        audioStatusEl.classList.remove("show");
+      }, keepMs);
+    }
+  }
+
+  let audioRetries = 0;
+
+  /**
+   * 音频完全没起来时的重试。
+   *
+   * 浏览器只允许在「一次真实的用户手势」里建立音频，所以重试必须挂在点击上。
+   * 重试成功后音乐直接从当前阶段接着走 —— setMood / getMusicTime 读的都是实时状态，
+   * 不需要重建剧情，也不会让音乐从头开始、更不会重置音乐时间轴。
+   */
+  function armAudioRetry() {
+    if (audioRetries >= MAX_AUDIO_RETRIES) {
+      setAudioStatus(AUDIO_GIVEUP_HINT, 6000);
+      return;
+    }
+    setAudioStatus(AUDIO_RETRY_HINT, 6000);
+    // 必须等这一次 click 的事件派发彻底结束再挂监听：DOM 规范里在派发过程中
+    // 新加到祖先节点上的监听器，会被同一个事件立刻触发 —— 那样这次点击就会
+    // 当场把重试名额吃掉（而且是在音频刚判定失败、还没准备好的时候）。
+    setTimeout(() => {
+      document.addEventListener("click", retryAudio, { once: true, capture: true });
+    }, 0);
+  }
+
+  async function retryAudio() {
+    audioRetries += 1;
+    setAudioStatus(AUDIO_PREPARING);
+    const r = await audio.start();
+    if (r.ok) {
+      setAudioStatus("");
+      console.log(`[audio] 重试成功：mode=${r.mode}`);
+      // start() 内部会先按 "stars" 档设一次音量；这里拉回剧情真正所在的阶段
+      audio.setMood(audio.currentMood);
+      return;
+    }
+    console.warn(`[audio] 重试仍未成功（${r.reason}）`);
+    armAudioRetry();
+  }
+
   // INTRO
   await wait(300);
 
@@ -89,16 +165,37 @@ async function run() {
     intro.style.opacity = "0";
     setTimeout(() => intro.remove(), 700);
 
-    // 不阻塞剧情：音乐在后台加载，失败会自动回退，不影响后续动画
-    audio.start().catch(() => {});
+    // ---- 1) 先把音频启动这一步做完，拿到「明确的结果」再进星星 ----
+    //
+    // audio.start() **永远不会 reject**：它返回 { ok, mode, reason }。
+    // 整段还有硬上限（config.timing.audioStartTimeout，默认 3 秒）——
+    // 某些 WebView 里 play() / AudioContext.resume() 的 Promise 既不 resolve
+    // 也不 reject，没有上限的话用户看到的就是「点完开始，页面像卡死」。
+    //
+    // 以前这里是 `audio.start().catch(() => {})`：既不 await、又把错误全部吞掉，
+    // 于是「音乐没起来」这件事没有任何人知道，剧情照样往下跑。
+    // 只有慢到用户会察觉（>250ms）才显示「正在准备音乐…」，正常情况不会闪出一行字。
+    const preparingTimer = setTimeout(() => setAudioStatus(AUDIO_PREPARING), 250);
+    const audioResult = await audio.start();
+    clearTimeout(preparingTimer);
 
-    // STARS
-    // 把 audio 交给 Stars：15 颗普通星星仍按原节奏出现，
-    // 5 颗特殊星星由 bgm 的真实鼓点驱动亮起来（拿不到真实音乐时间就退回原节奏）。
+    if (audioResult.ok) {
+      setAudioStatus("");
+      console.log(`[audio] 音乐已启动：mode=${audioResult.mode}`);
+    } else {
+      console.warn(`[audio] 音乐未能启动（${audioResult.reason}）：进入无音乐降级，剧情继续`);
+      armAudioRetry();
+    }
+
+    // ---- 2) STARS ----
+    // 把 audio 和启动结果一起交给 Stars：
+    //   · mode === "file" → 15 颗普通星星按原节奏出现，5 颗特殊星星由 bgm 的
+    //     真实鼓点（<audio>.currentTime）驱动亮起来
+    //   · 其它情况 → 明确走「无音乐降级」，20 颗星星走同一条一颗一颗出现的序列
     // 音乐只控制「特殊星星什么时候出现」，绝不会自动打开照片 ——
     // 照片只能是用户点击特殊星星后由 photos.openForStar() 打开。
     const stars = new Stars(document.getElementById("stars"));
-    await stars.appear(audio);
+    await stars.appear(audio, audioResult);
 
     // Gate the camera descent: only proceed after all 5 memories have been opened AND closed
     // For debugging/preview, append ?skip=1 to the URL to skip the gate
