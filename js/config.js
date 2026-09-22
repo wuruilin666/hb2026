@@ -80,9 +80,24 @@ export const birthdayConfig = {
     starAppearBase: 520,
     starAppearRamp: 14,
     starPauseAfterAll: 2600,
-    // 五颗特殊星星等真实音轨起播的最长毫秒数；超时就退回原来的出现节奏，
-    // 避免一直等一个播不出来的音乐把开场卡住（普通星星此时照常出现）
-    specialStarWaitTimeout: 12000,
+    // 【次级兜底】只有在拿不到 audio.start() 的明确结果时（老调用方式）才会用到：
+    // 等这么久还没有真实音轨就退回原来的出现节奏。
+    // 主线现在靠 audioStartTimeout 那条明确结果判断，不会再靠猜、也不会等满十几秒。
+    specialStarWaitTimeout: 3000,
+
+    // ---- 音频启动（js/audio.js · js/stars.js · js/main.js）----
+    // 等 <audio>.play() 真的开始播放、以及 AudioContext.resume() 真的进入 running
+    // 的**总**时间预算（毫秒）。超过就明确判定这条路失败 / 走下一条路。
+    // 为什么必须有：部分 WebView（尤其微信内置 WebView）里 play() / resume() 返回的
+    // Promise 既不 resolve 也不 reject，没有上限就是用户看到的「点完开始，页面像卡死」。
+    // 控制在 2~4 秒之间：太短会误伤慢网络，太长用户会以为网页已经死了。
+    audioStartTimeout: 2600,
+    // 音轨已经确认在播之后，等它进入「能读到 currentTime」状态的最长毫秒数
+    trackReadyTimeout: 1500,
+    // 音轨在剧情中途真的没了（暂停不回来 / 出错 / 被系统回收）时的最长等待：
+    // 超过就按「无音乐降级」把剩下的特殊星星一颗一颗补出来，
+    // 避免整个故事永远卡在「等音乐」这一步。
+    musicStallTimeout: 6000,
     memoryModeDuration: 8000,
     cameraDownDuration: 8500,
     catIntroPause: 1600,
