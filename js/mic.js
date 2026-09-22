@@ -12,6 +12,9 @@ import { wait } from "./utils.js";
  *     用特性检测，不支持的浏览器（如桌面 Chrome）一行都不会执行。
  *  3. 录音开始/结束前后各检查一次：BGM 若被浏览器暂停，就接着**原位置**恢复，
  *     并把它拉回当前阶段的设计音量。全程不新建 <audio>、不重置 currentTime。
+ *  4. listen() **永远不 reject**：麦克风这条路无论出什么意外，都退化成
+ *     「等满兜底时长就算吹过了」，与拿不到麦克风时的表现完全一致 ——
+ *     绝不能因为一个音频异常把整个生日剧情停在吹蜡烛这一步。
  */
 export class MicBlow {
   constructor(audioManager) {
@@ -43,13 +46,20 @@ export class MicBlow {
   /**
    * 取 AudioContext：优先借用 AudioManager 的那个（全站唯一）。
    * 只有拿不到时才自己建一个，并记住"这个是我的"，结束时由自己 close。
-   * 返回 null = 环境完全没有 Web Audio，调用方走兜底等待。
+   * 返回 null = 环境完全没有 Web Audio（或创建失败），调用方走兜底等待。
+   *
+   * 全程不抛异常：AudioManager.ensureContext() 本身已经吞掉了构造异常，
+   * 这里自建的那条路也包一层 —— 抛出异常会直接毁掉吹蜡烛这一步。
    */
   getContext() {
     const am = this.audioManager;
     let shared = null;
     if (am) {
-      shared = typeof am.ensureContext === "function" ? am.ensureContext() : am.ctx || null;
+      try {
+        shared = typeof am.ensureContext === "function" ? am.ensureContext() : am.ctx || null;
+      } catch (e) {
+        shared = null;
+      }
       if (shared && shared.state === "closed") shared = null;
     }
     if (shared) {
@@ -59,8 +69,14 @@ export class MicBlow {
 
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return null;
-    this.ownsCtx = true;
-    return new AudioCtx();
+    try {
+      this.ownsCtx = true;
+      return new AudioCtx();
+    } catch (e) {
+      console.warn("[mic] 无法创建 AudioContext，麦克风检测走兜底等待", e);
+      this.ownsCtx = false;
+      return null;
+    }
   }
 
   /**
@@ -99,12 +115,41 @@ export class MicBlow {
   resumeBackgroundMusic() {
     const am = this.audioManager;
     if (!am) return false;
-    if (typeof am.restoreTrack === "function") am.restoreTrack(this.trackSnap);
-    if (typeof am.reassertVolume === "function") am.reassertVolume();
+    try {
+      if (typeof am.restoreTrack === "function") am.restoreTrack(this.trackSnap);
+      if (typeof am.reassertVolume === "function") am.reassertVolume();
+    } catch (e) {
+      /* 忽略：恢复失败也不该影响剧情 */
+    }
     return true;
   }
 
+  /**
+   * 对外入口。**永远 resolve**，返回值只可能是 "blow" 或 "timeout"。
+   *
+   * 任何意外（麦克风被拒、AudioContext 不可用、Web Audio 抛错…）都会退化成
+   * 「等满 fallbackMs 当作吹过了」，跟改动前拿不到麦克风时的兜底完全一样。
+   */
   async listen(fallbackMs = 5200) {
+    const t0 = performance.now();
+    try {
+      return await this.detect(fallbackMs);
+    } catch (e) {
+      console.warn("[mic] 麦克风检测出现异常，按兜底等待处理", e);
+      try {
+        this.stop();
+      } catch (err) {
+        /* 忽略 */
+      }
+      this.exitRecordingSession();
+      this.resumeBackgroundMusic();
+      const left = Math.max(0, fallbackMs - (performance.now() - t0));
+      if (left > 0) await wait(left);
+      return "timeout";
+    }
+  }
+
+  async detect(fallbackMs) {
     // 开麦前先把 BGM 的真实状态记下来（只读），事后再决定要不要恢复
     this.trackSnap = this.audioManager && this.audioManager.snapshotTrack
       ? this.audioManager.snapshotTrack()
@@ -160,8 +205,9 @@ export class MicBlow {
       const fallbackTimer = setTimeout(() => finish("timeout"), fallbackMs);
 
       const check = () => {
-        if (!this.running) return;
-        this.analyser.getByteTimeDomainData(data);
+        const analyser = this.analyser;
+        if (!this.running || !analyser) return;
+        analyser.getByteTimeDomainData(data);
 
         let sum = 0;
         let zcr = 0;
