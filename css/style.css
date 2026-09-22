@@ -403,22 +403,31 @@ html, body {
   100% { opacity: 0; transform: translateY(-35px) scale(1.2); }
 }
 
-/* Cat pose classes */
-.cat-wrap.holding-cake #arm-left {
-  transform: translate(130px, 330px) rotate(10deg) translateY(-10px);
-  transition: transform 0.8s ease;
+/* Cat pose classes.
+   这三组是唯一会被 JS 改 transform 的部位，先给它们钉死变换原点：
+   SVG <g> 上的 CSS transform 若吃「默认的百分比原点」，不同浏览器 / 不同版本
+   可能挑到不同的参考框（viewBox 还是元素自身 bbox），旋转中心就会不一致 ——
+   于是手机上会出现头离开身体、手臂甩出身体。0 0 是绝对坐标、不依赖任何参考框，
+   钉死之后 translate(x,y) rotate(a) 的语义与 SVG transform 属性完全一致（绕 (x,y) 旋转），
+   各端结果相同。
+   姿势值本身不再写在 CSS 里，而是由 js/cat.js 写进内联 transform ——
+   下面几条只保留 transition，所以动作时长与缓动和以前一字不差。 */
+#cat-head,
+#arm-left,
+#arm-right {
+  transform-box: view-box;
+  transform-origin: 0 0;
 }
+
+.cat-wrap.holding-cake #arm-left,
 .cat-wrap.holding-cake #arm-right {
-  transform: translate(290px, 330px) rotate(-10deg) translateY(-10px);
   transition: transform 0.8s ease;
 }
 
 .cat-wrap.looking-down #cat-head {
-  transform: translate(210px, 165px) rotate(6deg);
   transition: transform 0.6s ease;
 }
 .cat-wrap.looking-up #cat-head {
-  transform: translate(210px, 155px) rotate(-8deg);
   transition: transform 0.7s ease;
 }
 
@@ -436,7 +445,6 @@ html, body {
 }
 
 .cat-wrap.raise-right #arm-right {
-  transform: translate(290px, 260px) rotate(-110deg);
   transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .cat-wrap.raise-right #held-candle {
@@ -444,7 +452,6 @@ html, body {
 }
 
 .cat-wrap.insert-right #arm-right {
-  transform: translate(290px, 340px) rotate(-20deg);
   transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
