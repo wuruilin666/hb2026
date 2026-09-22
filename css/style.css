@@ -694,6 +694,33 @@ html, body {
   opacity: 1;
 }
 
+/* 音频启动状态提示（元素由 js/main.js 在需要时才创建，index.html 不动）。
+   只在两种情况出现：音频启动慢到用户会察觉（>250ms）时的「正在准备音乐…」，
+   以及音乐最终没能建立起来时的提示。位置就在开始按钮原来所在的位置下方，
+   是一行很小的说明文字，不遮挡任何东西、也不是弹窗。
+   音乐正常启动（含回退到内置合成音乐成功）时它从头到尾都不会出现。
+   文案写完后会自己淡出，不会一直挂在画面上。 */
+.audio-status {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 44px);
+  transform: translateX(-50%);
+  width: min(88vw, 520px);
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.6;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  z-index: 24;
+}
+
+.audio-status.show {
+  opacity: 1;
+}
+
 .ending {
   position: fixed;
   inset: 0;
