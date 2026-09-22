@@ -9,6 +9,7 @@ import { Candles } from "./candles.js";
 import { MicBlow } from "./mic.js";
 import { Fireworks } from "./fireworks.js";
 import { Ending } from "./ending.js";
+import { MemoryMontage } from "./memory-montage.js";
 
 const cfg = birthdayConfig.timing;
 
@@ -83,6 +84,12 @@ async function run() {
     // 不阻塞剧情：音乐在后台加载，失败会自动回退，不影响后续动画
     audio.start().catch(() => {});
 
+    // 开场回忆蒙太奇：完全由真实音轨的 currentTime 驱动，和剧情并行跑。
+    // 它只是视觉层 —— 不碰 photos 的 viewedStars / openedStars，
+    // 也不会顶替「五颗星全部看完」的判定；用户点开照片卡片时它会自动让位。
+    const montage = new MemoryMontage({ shouldYield: () => photos.isOpen });
+    montage.play(audio).catch(() => {});
+
     // STARS
     const stars = new Stars(document.getElementById("stars"));
     await stars.appear();
@@ -102,6 +109,8 @@ async function run() {
       }
     }
     if (photos.isOpen) photos.close();
+    // 五张都看完了、剧情要往下降了：开场蒙太奇立刻收起，别压到后面的镜头
+    montage.stop();
     stars.dim();
 
     // CAMERA DOWN
