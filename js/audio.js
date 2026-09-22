@@ -27,6 +27,8 @@ export class AudioManager {
     this.el = null;
     this.useFile = false;
     this.volRaf = 0;
+    // 当前阶段（mood）。音量被打断 / 被系统改过之后，用它把音量拉回设计目标。
+    this.currentMood = "stars";
 
     // 合成模式
     this.synthGain = null;
@@ -84,6 +86,77 @@ export class AudioManager {
     if (p && typeof p.catch === "function") p.catch(() => {});
   }
 
+  /**
+   * 供麦克风检测复用同一个 AudioContext —— 全站只保留一个。
+   *
+   * 为什么必须复用：iOS / WebKit 上，「播放背景音乐」和「麦克风录音」如果来自两个
+   * 不同的 AudioContext，系统会把它们当成两路音频会话来回切：背景音乐会短暂停止，
+   * 恢复时输出路由 / 音量也可能变一下（听感就是"声音突然变大"）。
+   * 合成模式本来就依赖这个 ctx 发声，文件模式用它做音效（chime / boom），
+   * 所以它一定已经存在，麦克风直接借用即可。
+   */
+  ensureContext() {
+    if (this.ctx && this.ctx.state !== "closed") return this.ctx;
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return null;
+    this.ctx = new AudioCtx();
+    this.sfx = this.ctx.createGain();
+    this.sfx.gain.value = 0.9;
+    this.sfx.connect(this.ctx.destination);
+    return this.ctx;
+  }
+
+  /**
+   * 记录背景音乐「此刻的真实状态」，供可能打断播放的操作（如开麦克风）前后对照。
+   * 只读，不改任何东西。
+   */
+  snapshotTrack() {
+    if (!this.useFile || !this.el) return null;
+    return {
+      wasPlaying: !this.el.paused && !this.el.ended,
+      time: this.el.currentTime,
+      volume: this.el.volume
+    };
+  }
+
+  /**
+   * 原本在播、却被浏览器暂停了（典型场景：麦克风启动触发 audio session 切换）
+   * 就接着**原位置**继续播。
+   *
+   * 只调 `el.play()`：不新建元素、不重置 currentTime、不重头开始，
+   * 所以特殊星星依赖的音乐时间轴不受影响。
+   * 返回 true 表示这次真的恢复了一次播放。
+   */
+  restoreTrack(snap) {
+    if (!snap || !snap.wasPlaying) return false;
+    if (!this.useFile || !this.el) return false;
+    if (!this.el.paused) return false;
+    try {
+      const p = this.el.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    } catch (e) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * 把背景音乐音量**立刻**压回「当前阶段」的设计目标（0.6 × phases[mood]）。
+   *
+   * 用在被打断 / 恢复之后：既不为麦克风额外压低，也不让被系统改过的音量留在原地，
+   * 从而避免"恢复后音量突然变大/变小"。不走渐变（不会叠出新的 ramp），
+   * 也不改任何阶段音量配置 —— 只是把当前阶段本来就该有的那个值重新写一遍。
+   */
+  reassertVolume() {
+    if (!this.useFile || !this.el) return;
+    const phases = this.music.phases || {};
+    const scale = phases[this.currentMood] ?? 1;
+    const target = Math.max(0, Math.min(1, (this.music.volume ?? 0.6) * scale));
+    cancelAnimationFrame(this.volRaf);
+    this.volRaf = 0;
+    this.el.volume = target;
+  }
+
   async start() {
     if (this.started) return;
 
@@ -100,13 +173,10 @@ export class AudioManager {
       }
     }
 
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (AudioCtx) {
-      this.ctx = new AudioCtx();
-      if (this.ctx.state === "suspended") await this.ctx.resume();
-      this.sfx = this.ctx.createGain();
-      this.sfx.gain.value = 0.9;
-      this.sfx.connect(this.ctx.destination);
+    // 全站唯一的 AudioContext（麦克风检测之后会复用它，见 ensureContext）
+    if (window.AudioContext || window.webkitAudioContext) {
+      const ctx = this.ensureContext();
+      if (ctx && ctx.state === "suspended") await ctx.resume();
     }
 
     // 优先使用用户自己的音乐文件
@@ -169,11 +239,14 @@ export class AudioManager {
     const from = el.volume;
     const dur = Math.max(0.1, seconds) * 1000;
     const t0 = performance.now();
+    // 任何时刻只允许一条音量渐变在跑：先彻底取消上一条（含它的 volRaf 句柄）
     cancelAnimationFrame(this.volRaf);
+    this.volRaf = 0;
     const step = (now) => {
       const p = Math.min(1, (now - t0) / dur);
       el.volume = Math.max(0, Math.min(1, from + (target - from) * p));
       if (p < 1) this.volRaf = requestAnimationFrame(step);
+      else this.volRaf = 0;
     };
     this.volRaf = requestAnimationFrame(step);
   }
@@ -249,6 +322,8 @@ export class AudioManager {
 
   fadeTo(mood, duration = 1.5) {
     if (!this.started) return;
+    // 记住当前阶段：音量被打断 / 被系统改过之后要靠它拉回设计目标（见 reassertVolume）
+    this.currentMood = mood;
     if (this.useFile) {
       const phases = this.music.phases || {};
       const scale = phases[mood] ?? 1;
