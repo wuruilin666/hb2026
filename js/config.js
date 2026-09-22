@@ -52,7 +52,13 @@ export const birthdayConfig = {
     src: "assets/bgm.mp3",
     volume: 0.6, // 整体音量 0~1
     loop: true, // 播完是否循环（曲子比剧情短就开 true）
-    fadeIn: 4, // 开场淡入秒数
+    // 开场淡入秒数。
+    // 这里必须是 0：五颗特殊星星是按 bgm 自身的 currentTime 精确点亮的
+    // （见上面的 specialStarBeatTimeline，第一颗在 0.021s），
+    // 而淡入会把开头几秒的音量从 0 慢慢升上来 —— 音乐时间 0.021s 处音量只有约 0.004，
+    // 2.053s 处才约 0.236，于是「星星亮了却听不到那一声 dong」。
+    // 设成 0 之后音轨一起播就是正常音量，鼓点与星星才对得上。
+    fadeIn: 0,
     // 各阶段音量倍率（0~1），相对于上面的 volume
     phases: {
       stars: 0.75,
