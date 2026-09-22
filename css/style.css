@@ -569,6 +569,14 @@ html, body {
   border-radius: 12px;
   object-fit: contain;
   max-height: 60vh;
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+
+/* 切换照片时只隐藏照片内容（淡出），卡片外壳保持原位、不重播入场动画。
+   在新的目标照片确认可以绘制之前一直保持这个状态，旧照片不会顶位闪回。 */
+.photo-card.switching img {
+  opacity: 0;
 }
 
 .photo-close {
