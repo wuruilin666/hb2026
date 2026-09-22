@@ -49,6 +49,12 @@ export class Stars {
           setTimeout(() => el.classList.remove("active"), 200);
           photos.openForStar(i);
         });
+        // 首次出现的闪耀动画播完就把 class 摘掉：
+        // 保证每颗特殊星只播一次，不会被重绘 / twinkle / 点击重复触发。
+        // 动画时长由 CSS 决定（420ms），这里只做清理，不参与任何时间同步。
+        el.addEventListener("animationend", (e) => {
+          if (e.animationName === "specialBurst") el.classList.remove("special-burst");
+        });
       }
 
       this.container.appendChild(el);
@@ -97,6 +103,18 @@ export class Stars {
   }
 
   /**
+   * 特殊星「第一次亮起」：出现的同时附带一次短促闪耀（.special-burst，约 420ms）。
+   *
+   * 这里只负责加 class —— 什么时候亮、亮哪一颗，完全由调用方决定：
+   * 有真实音乐时间时由 audio.currentTime 决定，回退时才是原来的节奏。
+   * 动画结束后 animationend 会把 class 摘掉，所以每颗星只会播一次。
+   */
+  revealSpecial(star) {
+    star.element.classList.add("visible");
+    star.element.classList.add("special-burst");
+  }
+
+  /**
    * 五颗特殊星星：按 bgm 里实测出来的鼓点依次亮起来。
    *
    * - 唯一时钟是 audio.getMusicTime()（= <audio>.currentTime），
@@ -130,7 +148,7 @@ export class Stars {
       }
       for (const star of specials) {
         await wait(base - star.index * ramp + randomInt(-30, 30));
-        star.element.classList.add("visible");
+        this.revealSpecial(star);
       }
       return;
     }
@@ -155,7 +173,8 @@ export class Stars {
           nextIndex += 1;
           if (star && !shown.has(star.index)) {
             shown.add(star.index);
-            star.element.classList.add("visible");
+            // 音乐时间到了、这颗特殊星第一次亮起 → 附带一次短促闪耀
+            this.revealSpecial(star);
           }
         }
 
