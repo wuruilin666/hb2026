@@ -28,7 +28,8 @@ export function once(el, event) {
  * - decode() 失败不代表图片不可用（例如被中断），按成功处理。
  * - onload 与「命中缓存直接完成」两条路径都可能触发完成，用 settled 保证只 settle 一次。
  *
- * photos.js（五颗特殊星星的照片卡片）与 memory-montage.js（开场音乐蒙太奇）共用。
+ * 供 photos.js（五颗特殊星星的照片卡片）使用：点击星星换图时靠这两个 helper
+ * 保证「旧图先退场、新图真的可以绘制了才揭开」，不会闪回旧图。
  */
 export function loadImage(src) {
   return new Promise((resolve, reject) => {
