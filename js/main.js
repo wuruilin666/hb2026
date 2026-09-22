@@ -41,6 +41,15 @@ function buildBackgroundStars() {
 }
 
 async function run() {
+  // 开发调试：URL 带 ?cueedit=1 时只启动 Episode 33 cue 编辑器，不跑正式剧情。
+  // 用动态 import —— 正式页面根本不会加载 js/cue-editor.js，没有任何额外开销。
+  if (new URLSearchParams(location.search).has("cueedit")) {
+    import("./cue-editor.js")
+      .then((m) => m.startCueEditor())
+      .catch((err) => console.error("[cue] 启动失败", err));
+    return;
+  }
+
   buildBackgroundStars();
 
   const audio = new AudioManager();
