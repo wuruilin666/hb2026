@@ -436,7 +436,7 @@ export class Fireworks {
           rocketInterval = random(800, 1400);
         } else if (state === STATE.PEAK) {
           const t = clamp((elapsed - tBuild) / Math.max(1, tForm - tBuild), 0, 1);
-          rocketInterval = 420 - t * 220; // 420 → 200ms，渐密
+          rocketInterval = 360 - t * 180; // 360 → 180ms，渐密（庆典高潮感）
         } else if (state === STATE.FORMING && elapsed < tGather) {
           rocketInterval = random(560, 900); // 数量明显减少
         }
@@ -490,7 +490,7 @@ export class Fireworks {
             nextBurstType++;
             let sizeFactor;
             if (elapsed < tBuild) sizeFactor = random(0.45, 0.7);
-            else if (elapsed < tForm) sizeFactor = random(0.7, 1.3);
+            else if (elapsed < tForm) sizeFactor = random(0.85, 1.5);
             else sizeFactor = random(1.1, 1.7);
             this.explode(p.x, p.y, burstType, sizeFactor);
           }
