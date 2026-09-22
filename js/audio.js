@@ -56,6 +56,34 @@ export class AudioManager {
     return birthdayConfig.music || {};
   }
 
+  /**
+   * 真正在播放的音乐时间（秒）—— 音乐驱动动画的唯一时钟。
+   *
+   * - 用真实音轨时 = <audio>.currentTime（歌曲自身的时间轴）
+   * - 还没起播 / 被浏览器暂停 / 已回退到合成音乐时 = null
+   *
+   * 不要用 setTimeout 去模拟音乐里的时间点：加载快慢、手机性能、掉帧、
+   * 首次播放延迟都会让两者错开；currentTime 永远说的是「真正播到哪了」。
+   */
+  getMusicTime() {
+    if (!this.useFile || !this.el) return null;
+    if (this.el.paused || this.el.ended) return null;
+    if (this.el.readyState < 2) return null; // 还没有可播放的数据
+    return this.el.currentTime;
+  }
+
+  /** 是否有真实音轨正在播放（false = 还没起播，或已经回退到合成音乐） */
+  isTrackPlaying() {
+    return this.getMusicTime() != null;
+  }
+
+  /** 音轨已加载但被浏览器拦下自动播放时，在任意一次用户手势里再试一次 play() */
+  resumeTrack() {
+    if (!this.useFile || !this.el || !this.el.paused) return;
+    const p = this.el.play();
+    if (p && typeof p.catch === "function") p.catch(() => {});
+  }
+
   async start() {
     if (this.started) return;
 
