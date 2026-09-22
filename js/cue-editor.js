@@ -4,11 +4,13 @@
 // 用途：把 assets/bgm.mp3 前奏里那几声明显的「dong」在歌曲里的真实时间精确量出来，
 //       并直接产出可以贴进 js/config.js 的 specialStarBeatTimeline。
 //
-// 两条记录路径（都不需要你输入秒数）：
-//   A. 边播边打点：听到 dong 就按 1~5。时间直接取 audio.currentTime；
-//      默认还会「吸附到最近候选峰」（±0.25s），用来消掉人手的反应延迟。
-//   B. 逐个试听：用 ◀ / ▶ 在两个候选峰之间跳，跳到哪一个就听哪一个，
+// 三条拿到 5 个时间的路径（都不需要你输入秒数）：
+//   A. 一键填入：检测出来的鼓点是一条很稳的网格（实测 ≈0.752s 一拍 ≈80BPM），
+//      所以直接提供「每拍 / 每两拍 / 每四拍一声」三个按钮，先听一下再选。
+//   B. 逐个试听：用 ← / → 在候选峰之间跳，跳到哪一个就听哪一个，
 //      听准了直接按 1~5 —— 这条路径完全不受反应速度影响，最准。
+//   C. 边播边打点：听到 dong 就按 1~5。时间直接取 audio.currentTime；
+//      默认还会「吸附到最近候选峰」（±0.25s），用来消掉人手的反应延迟。
 //
 // 隔离保证（正式页面完全不受影响）：
 //   · main.js 只在 ?cueedit=1 时动态 import 本模块，正式页面根本不会加载它；
@@ -71,6 +73,7 @@ const CSS = `
   opacity: 0.9;
 }
 .cue-root label.cue-check { display: flex; align-items: center; gap: 6px; opacity: 0.85; font-size: 13px; cursor: pointer; }
+.cue-picklabel { opacity: 0.62; font-size: 12px; }
 .cue-canvas {
   width: 100%;
   height: 200px;
@@ -290,6 +293,12 @@ export function startCueEditor() {
       <span class="cue-cand" id="cue-cand"></span>
       <span class="cue-status" id="cue-status">正在读取并分析 ${SRC} …</span>
     </div>
+    <div class="cue-row">
+      <span class="cue-picklabel">一键按检测到的鼓点网格填入（先用 ← → 听一下再决定）：</span>
+      <button id="cue-preset-1">每拍一声</button>
+      <button id="cue-preset-2">每两拍一声</button>
+      <button id="cue-preset-4">每四拍一声（旧配置）</button>
+    </div>
     <canvas class="cue-canvas" id="cue-canvas"></canvas>
     <div class="cue-hint">
       浅色区域 = 低频（&lt;130Hz）能量包络 ← dong 就在这里；暗色区域 = 高频（&gt;1800Hz）参考；
@@ -369,6 +378,51 @@ export function startCueEditor() {
 
   function resnapAll() {
     state.cues = state.rawCues.map((t) => effectiveFrom(t));
+  }
+
+  /* -------- 鼓点网格（用于一键填入） -------- */
+  /**
+   * 从强候选里抽出「每拍一声」的网格：
+   * 相邻强候选的间隔取中位数当作一拍的长度，再以第一个强候选为锚点，
+   * 只保留落在网格上的峰（这样同一拍里的二次峰会被剔掉）。
+   */
+  function kickGrid() {
+    const strong = state.candidates.filter((c) => c.score >= state.strongMax && c.time >= 0.5);
+    if (strong.length < 3) return [];
+    const gaps = [];
+    for (let i = 1; i < strong.length; i++) {
+      const g = strong[i].time - strong[i - 1].time;
+      if (g > 0.35) gaps.push(g);
+    }
+    if (!gaps.length) return [];
+    gaps.sort((a, b) => a - b);
+    const beat = gaps[Math.floor(gaps.length / 2)];
+    const anchor = strong[0].time;
+    return strong
+      .filter((c) => {
+        const k = Math.round((c.time - anchor) / beat);
+        return Math.abs(c.time - (anchor + k * beat)) < beat * 0.18;
+      })
+      .map((c) => c.time);
+  }
+
+  /** 按「每 step 拍一声」填入 5 个 cue（只是填入候选值，之后仍可逐个改） */
+  function applyPreset(step) {
+    const grid = kickGrid();
+    const picked = [];
+    for (let i = 0; i < 5; i++) {
+      const idx = i * step;
+      if (idx >= grid.length) break;
+      picked.push(grid[idx]);
+    }
+    if (picked.length < 5) {
+      els.status.textContent =
+        `检测到的鼓点只有 ${grid.length} 个，不够按「每 ${step} 拍」填满 5 个，请手动记录`;
+      return;
+    }
+    state.rawCues = picked.map((t) => Math.round(t * 1000) / 1000);
+    resnapAll();
+    refresh();
   }
 
   /* -------- 渲染 -------- */
@@ -666,6 +720,9 @@ export function startCueEditor() {
   });
   els.prev.addEventListener("click", () => gotoCandidate(-1));
   els.next.addEventListener("click", () => gotoCandidate(1));
+  root.querySelector("#cue-preset-1").addEventListener("click", () => applyPreset(1));
+  root.querySelector("#cue-preset-2").addEventListener("click", () => applyPreset(2));
+  root.querySelector("#cue-preset-4").addEventListener("click", () => applyPreset(4));
   els.clearAll.addEventListener("click", () => {
     state.rawCues = [null, null, null, null, null];
     state.cues = [null, null, null, null, null];
